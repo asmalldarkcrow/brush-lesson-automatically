@@ -30,20 +30,27 @@ class CustomAndroidScript(AndroidBotMain):
             print(result)
             self.click(result)
             time.sleep(1)
+            result = self.click_element("com.chaoxing.mobile/android.widget.TextView@text=章节", 5, 0.5)
+            print(result)
 
     def look_class(self):
         #观看课程
         self.current_class=float(input("(示例:2.3)\n输入你当前刷课进度：")) #当前的课程
-        self.show_first_class()
-        while True:
-            self.cut_class()
+        self.show_first_class() #自定义的滑动函数(防止开始刷课的节数不在屏幕中)
+        while True: #循环执行
+            self.cut_class() #自定义切换方法，用来判断当前应该看哪节课，并点进去
             print("start look class")
-            time.sleep(2)
-            result = self.find_text("视频")
+            time.sleep(2) #防止未加载出页面就文字识别导致错误
+            result = self.find_text("视频")#识别文字
             print(result)
-            self.click(result)
-            time.sleep(3)
-            self.ago_now()
+            if len(result)==0:
+                time.sleep(3)
+                self.ago_now()  # 自定义函数，判断这节课是否刷完
+            else:
+                self.click(result)  # 点击视频进去视频页面
+                time.sleep(3)
+                self.ago_now()  # 自定义函数，判断这节课是否刷完
+
 
     def ago_now(self):
         #判断课程是否看过
@@ -56,21 +63,23 @@ class CustomAndroidScript(AndroidBotMain):
             i=1
             while i==1:
                 time.sleep(5)
-                outline=self.element_exists("com.chaoxing.mobile/android.widget.Button@text=重试", 2, 0.5)
+                outline=self.element_exists("com.chaoxing.mobile/android.widget.Button@text=重试", 1, 0.5)
                 if outline: #判断是否断网
-                    self.click_element("com.chaoxing.mobile/android.widget.Button@text=重试", 2, 0.5)
-                result = self.get_element_rect("com.chaoxing.mobile/com.chaoxing.mobile:id=start", 2, 0.5)
-                if result!=(): #判断是否看完
-                    self.click_element("com.chaoxing.mobile/com.chaoxing.mobile:id=back", 5, 0.5)
-                time.sleep(2)
-                result=self.find_text("任务点已完成")
-                if result!=():
-                    break
+                    self.click_element("com.chaoxing.mobile/android.widget.Button@text=重试", 1, 0.5)
+                result = self.element_exists("com.chaoxing.mobile/com.chaoxing.mobile:id=start", 1, 0.5)
+                if result: #判断是否看完
+                    self.back()
+                    time.sleep(2)
+                    result=self.find_text("任务点已完成")
+                    if result!=():
+                        break
+                    else:
+                        self.click_element("com.chaoxing.mobile/android.widget.Button@text=播放", 1, 0.5)
         self.back()
 
     def cut_class(self):
         #看完课程更替视频
-        self.infor_dispose()
+        self.infor_dispose() #解决计算机浮点计算偏差问题
         while True:
             #匹配课程
             print(self.current_class)
@@ -111,14 +120,14 @@ class CustomAndroidScript(AndroidBotMain):
         #防止第一个课程不在屏幕内
         result = self.element_exists(
             "com.chaoxing.mobile/android.widget.TextView@text={}".format(self.current_class), 5, 0.5)
-        if result:
+        if result: #判断屏幕中是否有这个课程的元素
             print("初始化目标课程在屏幕内")
-        else:
-            for i in range(15):
+        else: #如果没有
+            for i in range(15): #下拉寻找
                 self.swipe((402, 1404), (402, 564), 2)
                 result = self.element_exists(
                     "com.chaoxing.mobile/android.widget.TextView@text={}".format(self.current_class), 3, 0.5)
-                if result:
+                if result: #如果该目标进入了屏幕就退出循环
                     break
 
     def infor_dispose(self):
